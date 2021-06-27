@@ -89,7 +89,10 @@ const TrackedNews = () => {
 
 	useEffect(() => {
 		setArticles([]);
-		if (tracks.length === 0) return;
+		if (tracks.length === 0) {
+			setLoaded(true);
+			return;
+		}
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
