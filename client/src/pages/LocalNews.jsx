@@ -1,23 +1,24 @@
 import {
-	Avatar,
-	Box,
-	Button,
-	FormLabel,
-	Heading,
-	Modal,
-	ModalBody,
-	ModalContent,
-	ModalFooter,
-	ModalHeader,
-	ModalOverlay,
-	ScaleFade,
-	Switch,
-	Text,
-	useDisclosure,
-	useToast,
+    Avatar,
+    Box,
+    Button,
+    FormLabel,
+    Heading,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    ModalOverlay,
+    ScaleFade,
+    Switch,
+    Text,
+    useDisclosure,
+    useToast
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
+import { usePosition } from "use-position";
 import { Loading } from "../Components/Loading";
 import { useAuth } from "../contexts/AuthContext";
 import { getAlignmentFromShort } from "../data/alignments";
@@ -25,7 +26,7 @@ import firebase from "../firebase";
 import theme from "../theme";
 import Layout from "./Layout";
 
-const News = () => {
+const LocalNews = () => {
 	const [loaded, setLoaded] = useState(false);
 	const [otherSide, setOtherSide] = useState(false);
 	const [neutral, setNeutral] = useState(false);
@@ -36,6 +37,8 @@ const News = () => {
 	const { isOpen, onOpen, onClose } = useDisclosure();
 	const history = useHistory();
 	const toast = useToast();
+
+	const { latitude, longitude } = usePosition(true);
 
 	const showPoliTestWarning = () => {
 		console.log("No test found, opening modal.");
@@ -72,7 +75,10 @@ const News = () => {
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
-		fetch("http://localhost:5001/apol-hawt/us-central1/getArticles", {
+
+		if (!latitude || !longitude) return;
+
+		fetch("http://localhost:5001/apol-hawt/us-central1/getLocalNews", {
 			method: "POST",
 			mode: "cors",
 			headers: {
@@ -82,6 +88,7 @@ const News = () => {
 				userId: currentUser.uid,
 				otherSide,
 				neutral,
+                coordinates: [latitude, longitude]
 			}),
 		})
 			.then(data => data.json())
@@ -107,7 +114,7 @@ const News = () => {
 				console.log(err);
 			});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentUser.uid, otherSide, neutral]);
+	}, [currentUser.uid, otherSide, neutral, latitude, longitude]);
 
 	return (
 		<Layout>
@@ -186,8 +193,8 @@ const News = () => {
 								d="flex"
 								alignItems="flex-start"
 								justifyContent="space-between">
-								<Heading mb="2rem" lineHeight="1">
-									General News
+								<Heading mb="2rem" lineHeight="1" alignItems="center">
+									Local News
 								</Heading>
 
 								<Box>
@@ -293,4 +300,4 @@ const News = () => {
 	);
 };
 
-export default News;
+export default LocalNews;

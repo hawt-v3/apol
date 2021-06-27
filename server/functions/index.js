@@ -8,15 +8,70 @@ const newsapi = new NewsAPI("bcdc962160354c3eae2530a1f380e8dd");
 const axios = require("axios").default;
 
 const serviceAccount = require("./key.json");
-const { shuffle } = require("./helpers");
+const { shuffle, getAlignmentFromLong } = require("./helpers");
+const NodeGeocoder = require("node-geocoder");
+
+const options = {
+  provider: "google",
+  httpAdapter: "https",
+  apiKey: "AIzaSyBzZDHN4L_5zzGhsjxxjhKep39YVvRv1i0",
+  formatter: "json",
+};
+
+const geocoder = NodeGeocoder(options);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
+const getCity = async (lat, lon) => {
+  const res = await geocoder.reverse({ lat: 45.767, lon: 4.833 });
+
+  if (!res) return null;
+
+  return {
+    city: res[0].city,
+    country: res[0].country,
+    countryCode: res[0].countryCode,
+  };
+};
+
+exports.getLocalNews = functions.https.onRequest(async (request, response) => {
+  cors(request, response, async () => {
+    const { coordinates, otherSide } = request.body;
+
+    if (!coordinates || !coordinates[0] || !coordinates[1]) {
+      response.status(400);
+      return response.json({ message: "Please provide coordinates" });
+    }
+
+    const { city, country, countryCode } = await getCity(
+      coordinates[0],
+      coordinates[1]
+    );
+
+    const news = await newsapi.v2.everything({
+      q: `${city} ${country}`,
+      // country: countryCode.toLowerCase(),
+      langauge: "en",
+      lang: countryCode.toLowerCase(),
+    });
+
+    let articles = news.articles.map(article => {
+      article.publishedAt = new Date(article.publishedAt);
+      return article;
+    });
+
+    if (otherSide) {
+      articles = shuffle(articles);
+    }
+
+    articles.sort((a, b) => a.publishedAt.getTime() > b.publishedAt.getTime());
+
+    return response.json(articles);
+  });
+  return;
+});
 
 exports.getArticles = functions.https.onRequest(async (request, response) => {
   cors(request, response, async () => {
@@ -269,13 +324,49 @@ exports.getArticles = functions.https.onRequest(async (request, response) => {
 const getArticleAlignment = async (title, content) => {
   const article = title + "\n" + content;
 
-  const alignment = await axios.post("https://a-pol.herokuapp.com/classify", {
+  const alignment = await axios.post("https://a-poll.herokuapp.com/classify", {
     content: article,
   });
 
-  return alignment.data.Alignment;
+  return getAlignmentFromLong(alignment.data.alignment);
 };
 
+exports.searchArticles = functions.https.onRequest(
+  async (request, response) => {
+    cors(request, response, async () => {
+      const { otherSide } = request.body;
+      const { query } = request.body;
+
+      if (!query) {
+        response.status(400);
+        return response.json({ message: "Please provide a query" });
+      }
+
+      const news = await newsapi.v2.everything({
+        q: query,
+
+        langauge: "en",
+        lang: "en",
+      });
+
+      let articles = news.articles.map(article => {
+        article.publishedAt = new Date(article.publishedAt);
+        return article;
+      });
+
+      if (otherSide) {
+        articles = shuffle(articles);
+      }
+
+      articles.sort(
+        (a, b) => a.publishedAt.getTime() > b.publishedAt.getTime()
+      );
+
+      return response.json(articles);
+    });
+    return;
+  }
+);
 // get the function thingy
 
 const checkNews = async (request, response) => {
@@ -302,7 +393,21 @@ const checkNews = async (request, response) => {
   const articles = filteredArticles.map(async pArticle => {
     const article = pArticle; // this is the filtered article with the alignment
 
-    const alignment = await getArticleAlignment();
+    let alignment = await getArticleAlignment(
+      article.title,
+      article.description
+    );
+
+    const yes = Math.floor(Math.random() * 6);
+
+    if (yes > 4) {
+      alignment = "NTRL";
+    }
+
+    if (alignment === "NATL") {
+      const yes = Math.floor(Math.random() * 3);
+      if (yes > 1) alignment = "CONS";
+    }
 
     const hashString = pArticle.title + pArticle.description;
     const hash = crypto.createHash("md5").update(hashString).digest("hex");

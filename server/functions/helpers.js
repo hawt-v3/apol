@@ -30,33 +30,33 @@ const getAlignmentFromShort = alignment => {
 };
 
 const getAlignmentFromLong = alignment => {
-  switch (alignment) {
-    case "Neutral":
+  switch (alignment.toLowerCase()) {
+    case "neutral":
       return "NTRL";
 
-    case "Conservative":
+    case "conservative":
       return "CONS";
 
-    case "Socialist":
+    case "socialist":
       return "SOCL";
 
-    case "Nationalist":
+    case "nationalist":
       return "NATL";
 
-    case "Individualist":
+    case "individualist":
       return "INDV";
 
-    case "Anarcho-Capitalist":
+    case "anarcho-capitalist":
       return "ANCA";
 
-    case "SJW":
+    case "sjw":
       return "SJW";
 
-    case "Representative Liberal":
+    case "representative liberal":
       return "RPLB";
 
     default:
-      return "Neutral";
+      return "NTRL";
   }
 };
 
