@@ -302,6 +302,11 @@ const NAV_ITEMS = [
 				href: "/news/local",
 			},
 			{
+				label: "Tracked News",
+				subLabel: "See the news you follow.",
+				href: "/news/tracked",
+			},
+			{
 				label: "Search",
 				subLabel: "Inquire and learn what you seek.",
 				href: "/news/search",

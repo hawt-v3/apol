@@ -33,7 +33,6 @@ import Layout from "./Layout";
 const Search = () => {
 	const [loaded, setLoaded] = useState(false);
 	const [otherSide, setOtherSide] = useState(false);
-	const [neutral, setNeutral] = useState(false);
 	const [user, setUser] = useState({});
 	const [articles, setArticles] = useState([]);
 	const [query, setQuery] = useState("");

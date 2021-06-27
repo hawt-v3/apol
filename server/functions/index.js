@@ -331,6 +331,52 @@ const getArticleAlignment = async (title, content) => {
   return getAlignmentFromLong(alignment.data.alignment);
 };
 
+exports.getTrackedArticles = functions.https.onRequest(
+  async (request, response) => {
+    cors(request, response, async () => {
+      const { otherSide, tracks } = request.body;
+
+      if (!tracks || tracks.length === 0) {
+        response.status(400);
+        return response.json({ message: "Please provide tracks" });
+      }
+
+      let articles = tracks.map(track =>
+        newsapi.v2
+          .everything({
+            q: track,
+
+            langauge: "en",
+            lang: "en",
+          })
+          .then(content => {
+            let articless = content.articles.map(article => {
+              article.publishedAt = new Date(article.publishedAt);
+              return article;
+            });
+
+            return articless;
+          })
+      );
+      articles = await Promise.all(articles);
+
+      let final = [];
+
+      articles.forEach(articless => articless.forEach(a => final.push(a)));
+
+      final.sort((a, b) => a.publishedAt.getTime() > b.publishedAt.getTime());
+
+      final = shuffle(final);
+      if (otherSide) {
+        final = shuffle(final);
+      }
+
+      return response.json(final);
+    });
+    return;
+  }
+);
+
 exports.searchArticles = functions.https.onRequest(
   async (request, response) => {
     cors(request, response, async () => {

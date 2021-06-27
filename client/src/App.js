@@ -14,6 +14,7 @@ import News from "./pages/News";
 import PoliTest from "./pages/PoliTest";
 import { Register } from "./pages/Register";
 import Search from "./pages/Search";
+import TrackedNews from "./pages/TrackedNews";
 
 const App = () => {
 	return (
@@ -28,6 +29,7 @@ const App = () => {
 				{/* news & test */}
 				<PrivateRoute path="/news" component={News} exact />
 				<PrivateRoute path="/news/search" component={Search} />
+				<PrivateRoute path="/news/tracked" component={TrackedNews} />
 				<PrivateRoute path="/news/local" component={LocalNews} />
 				<PrivateRoute path="/test" component={PoliTest} />
 

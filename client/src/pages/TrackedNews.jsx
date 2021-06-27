@@ -1,9 +1,12 @@
+import { AddIcon, CloseIcon } from "@chakra-ui/icons";
 import {
-	Avatar,
 	Box,
 	Button,
+	Fade,
 	FormLabel,
 	Heading,
+	IconButton,
+	Input,
 	Modal,
 	ModalBody,
 	ModalContent,
@@ -16,29 +19,35 @@ import {
 	useDisclosure,
 	useToast,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { usePosition } from "use-position";
 import { Loading } from "../Components/Loading";
 import { useAuth } from "../contexts/AuthContext";
-import { getAlignmentFromShort } from "../data/alignments";
 import firebase from "../firebase";
 import theme from "../theme";
 import Layout from "./Layout";
 
-const LocalNews = () => {
+const TrackedNews = () => {
 	const [loaded, setLoaded] = useState(false);
 	const [otherSide, setOtherSide] = useState(false);
-	const [neutral, setNeutral] = useState(false);
+	const [userLoaded, setUserLoaded] = useState(false);
+	const [tracks, setTracks] = useState([]);
 	const [user, setUser] = useState({});
 	const [articles, setArticles] = useState([]);
+	const trackRef = useRef();
 
 	const { currentUser } = useAuth();
 	const { isOpen, onOpen, onClose } = useDisclosure();
 	const history = useHistory();
 	const toast = useToast();
 
-	const { latitude, longitude } = usePosition(true);
+	const removeItem = (arr, value) => {
+		var index = arr.indexOf(value);
+		if (index > -1) {
+			arr.splice(index, 1);
+		}
+		return arr;
+	};
 
 	const showPoliTestWarning = () => {
 		console.log("No test found, opening modal.");
@@ -56,8 +65,9 @@ const LocalNews = () => {
 		a.remove();
 	};
 
+	// update tracks live
+
 	useEffect(() => {
-		console.log(latitude, longitude);
 		// get user
 		firebase
 			.firestore()
@@ -68,18 +78,22 @@ const LocalNews = () => {
 			.then(user => {
 				if (!user.alignment) showPoliTestWarning();
 				setUser(user);
+				setTracks(user.tracks ? user.tracks : []);
+				setUserLoaded(true);
 			});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [currentUser.uid, user.alignment]);
 
+	const updateUserTracks = async tracks =>
+		firebase.firestore().doc(`users/${currentUser.uid}`).update({ tracks });
+
 	useEffect(() => {
+		setArticles([]);
+		if (tracks.length === 0) return;
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
-
-		if (!latitude || !longitude) return;
-
-		fetch("http://localhost:5001/apol-hawt/us-central1/getLocalNews", {
+		fetch("http://localhost:5001/apol-hawt/us-central1/getTrackedArticles", {
 			method: "POST",
 			mode: "cors",
 			headers: {
@@ -88,8 +102,7 @@ const LocalNews = () => {
 			body: JSON.stringify({
 				userId: currentUser.uid,
 				otherSide,
-				neutral,
-				coordinates: [latitude, longitude],
+				tracks,
 			}),
 		})
 			.then(data => data.json())
@@ -115,7 +128,7 @@ const LocalNews = () => {
 				console.log(err);
 			});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentUser.uid, otherSide, neutral, latitude, longitude]);
+	}, [currentUser.uid, otherSide, tracks]);
 
 	return (
 		<Layout>
@@ -137,50 +150,101 @@ const LocalNews = () => {
 							margin="5rem 2rem"
 							p="1.5rem">
 							<Heading size="md" mb="2rem">
-								Profile
+								Choose Your Tracks
 							</Heading>
-							<Box
-								w="100%"
-								d="flex"
-								flexDir="column"
-								justifyContent="center"
-								alignItems="center"
-								textAlign="center">
-								<Avatar />
-								<Heading size="md" mt={5}>
-									{currentUser.displayName}
-								</Heading>
-								<Text size="md" mt={3}>
-									{currentUser.email}
-								</Text>
-								<Text size="md" mt={3}>
-									Alignment:{" "}
-									<strong>{getAlignmentFromShort(user.alignment)}</strong>
-								</Text>
-								<Button
-									size="sm"
-									width="8.5rem"
-									mt="2rem"
-									colorScheme="blue"
-									variant="ghost"
-									onClick={() => history.push("/test")}>
-									Retake the test
-								</Button>
-								<Button
-									size="sm"
-									width="8.5rem"
-									mt={2}
-									colorScheme="pink"
-									variant="ghost"
-									onClick={() =>
-										firebase
-											.auth()
-											.signOut()
-											.then(() => history.push("/"))
-									}>
-									Log Out
-								</Button>
-							</Box>
+							<Fade in={userLoaded}>
+								<Box
+									w="100%"
+									d="flex"
+									flexDir="column"
+									justifyContent="center"
+									alignItems="flex-start"
+									textAlign="center">
+									{tracks.map((track, key) => (
+										<Box
+											key={key}
+											d="flex"
+											justifyContent="space-between"
+											w="100%"
+											mt={5}>
+											<Input
+												width="80%"
+												border="1px solid lightgray"
+												_disabled={{
+													border: "1px solid lightgray",
+												}}
+												_placeholder={{
+													textAlign: "center",
+												}}
+												disabled
+												placeholder={track}
+												size="sm"
+												rounded="full"
+											/>
+											<IconButton
+												onClick={() =>
+													setTracks(prev => {
+														let newArr = removeItem(prev, track);
+														console.log(newArr);
+														updateUserTracks([...newArr]);
+														return [...newArr];
+													})
+												}
+												colorScheme="red"
+												variant="ghost"
+												icon={<CloseIcon fontSize="14" />}
+												size="sm"
+												rounded="full"
+											/>
+										</Box>
+									))}
+									<Box d="flex" justifyContent="space-between" w="100%" mt={8}>
+										<Input
+											width="80%"
+											border="1px solid gray"
+											textAlign="center"
+											_placeholder={{
+												textAlign: "center",
+											}}
+											ref={trackRef}
+											placeholder="Eg. Elon Musk"
+											size="sm"
+											rounded="full"
+										/>
+										<IconButton
+											onClick={() =>
+												setTracks(prev => {
+													const track = trackRef.current.value;
+
+													if (tracks.find(t => t === track)) {
+														toast({
+															description: "Track already exists",
+															status: "error",
+															duration: 1000,
+														});
+														return prev;
+													}
+													if (track.length < 3) {
+														toast({
+															description: "Track name too short",
+															status: "error",
+															duration: 1000,
+														});
+														return prev;
+													}
+													updateUserTracks([...prev, track]);
+													return [...prev, track];
+												})
+											}
+											colorScheme="green"
+											variant="ghost"
+											icon={<AddIcon fontSize="14" />}
+											size="sm"
+											rounded="full"
+										/>
+									</Box>
+								</Box>
+							</Fade>
 						</Box>
 
 						{/* article listings */}
@@ -194,27 +258,16 @@ const LocalNews = () => {
 								d="flex"
 								alignItems="flex-start"
 								justifyContent="space-between">
-								<Heading mb="2rem" lineHeight="1" alignItems="center">
-									Local News
+								<Heading mb="2rem" lineHeight="1">
+									Tracked News
 								</Heading>
 
-								<Box>
+								<Box d="flex" alignItems="center" justifyContent="center">
 									<Box
 										d="flex"
 										alignItems="center"
 										justifyContent="space-between"
-										mt="0.3rem">
-										<FormLabel fontSize="sm" mb="4px">
-											Neutral Mode
-										</FormLabel>
-										<Switch onChange={e => setNeutral(e.target.checked)} />
-									</Box>
-
-									<Box
-										d="flex"
-										alignItems="center"
-										justifyContent="space-between"
-										mt="0.1rem">
+										mt="0.5rem">
 										<FormLabel fontSize="sm" mb="4px">
 											OtherSide Mode
 										</FormLabel>
@@ -223,6 +276,11 @@ const LocalNews = () => {
 								</Box>
 							</Box>
 
+							{tracks.length === 0 && (
+								<Heading size="md" fontWeight="normal">
+									Please add a track to see this page :P
+								</Heading>
+							)}
 							{articles.map((article, key) => (
 								<Box
 									key={key}
@@ -301,4 +359,4 @@ const LocalNews = () => {
 	);
 };
 
-export default LocalNews;
+export default TrackedNews;
