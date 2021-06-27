@@ -25,7 +25,7 @@ admin.initializeApp({
 });
 
 const getCity = async (lat, lon) => {
-  const res = await geocoder.reverse({ lat: 45.767, lon: 4.833 });
+  const res = await geocoder.reverse({ lat, lon });
 
   if (!res) return null;
 
