@@ -77,11 +77,8 @@ const Search = () => {
 
 	useEffect(() => {
 		if (query === "") return;
-		// temp url, don't forget to change!!!!!!!!!!!!!!!
-		// temp url, don't forget to change!!!!!!!!!!!!!!!
-		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		setLoaded(false);
-		fetch("http://localhost:5001/apol-hawt/us-central1/searchArticles", {
+		fetch("https://us-central1-apol-hawt.cloudfunctions.net/searchArticles", {
 			method: "POST",
 			mode: "cors",
 			headers: {
