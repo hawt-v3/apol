@@ -72,7 +72,7 @@ const News = () => {
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
-		fetch("http://localhost:5001/apol-hawt/us-central1/getArticles", {
+		fetch("https://us-central1-apol-hawt.cloudfunctions.net/getArticles", {
 			method: "POST",
 			mode: "cors",
 			headers: {

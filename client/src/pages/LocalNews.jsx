@@ -79,7 +79,7 @@ const LocalNews = () => {
 
 		if (!latitude || !longitude) return;
 
-		fetch("http://localhost:5001/apol-hawt/us-central1/getLocalNews", {
+		fetch("https://us-central1-apol-hawt.cloudfunctions.net/getLocalNews", {
 			method: "POST",
 			mode: "cors",
 			headers: {

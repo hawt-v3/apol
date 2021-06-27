@@ -93,18 +93,21 @@ const TrackedNews = () => {
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
 		// temp url, don't forget to change!!!!!!!!!!!!!!!
-		fetch("http://localhost:5001/apol-hawt/us-central1/getTrackedArticles", {
-			method: "POST",
-			mode: "cors",
-			headers: {
-				"content-type": "application/json; charset=utf-8",
-			},
-			body: JSON.stringify({
-				userId: currentUser.uid,
-				otherSide,
-				tracks,
-			}),
-		})
+		fetch(
+			"https://us-central1-apol-hawt.cloudfunctions.net/getTrackedArticles",
+			{
+				method: "POST",
+				mode: "cors",
+				headers: {
+					"content-type": "application/json; charset=utf-8",
+				},
+				body: JSON.stringify({
+					userId: currentUser.uid,
+					otherSide,
+					tracks,
+				}),
+			}
+		)
 			.then(data => data.json())
 			.then(articles =>
 				articles.map(article => {
