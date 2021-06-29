@@ -96,7 +96,7 @@ const LocalNews = () => {
 			.then(articles =>
 				articles.map(article => {
 					article.description =
-						article.description.length > 100
+						(article.description != null && article.description.length > 100)
 							? article.description.substring(0, 100) + "..."
 							: article.description;
 					return article;
